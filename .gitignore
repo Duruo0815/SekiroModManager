@@ -1,0 +1,12 @@
+﻿[Bb]in/
+[Oo]bj/
+publish/
+storage/
+config.json
+theme.json
+*.user
+*.userprefs
+*.suo
+.vs/
+.idea/
+.vscode/

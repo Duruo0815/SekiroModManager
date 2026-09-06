@@ -1,0 +1,12 @@
+<Application x:Class="SekiroModManager.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/SekiroModManager.App;component/Theme/DarkTheme.xaml" />
+                <ResourceDictionary Source="/SekiroModManager.App;component/Theme/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

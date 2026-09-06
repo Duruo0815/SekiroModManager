@@ -1,0 +1,311 @@
+<Window x:Class="SekiroModManager.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:SekiroModManager.App.ViewModels"
+        xmlns:common="clr-namespace:SekiroModManager.App.Common"
+        Title="只狼 MOD 管理器 (Sekiro Mod Manager)"
+        Height="720" Width="1080"
+        MinHeight="550" MinWidth="850"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BgMainBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}"
+        Icon="pack://application:,,,/SekiroModManager.App;component/app.png"
+        AllowDrop="True"
+        DragEnter="Window_DragEnter"
+        DragOver="Window_DragOver"
+        DragLeave="Window_DragLeave"
+        Drop="Window_Drop">
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <common:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <common:BoolToVisibilityConverter x:Key="InvertedBoolToVis" Invert="True" />
+        <common:CountToVisibilityConverter x:Key="EmptyCountToVis" />
+        <common:CountToVisibilityConverter x:Key="HasItemsCountToVis" Invert="True" />
+        <common:SeverityToBrushConverter x:Key="SeverityToBrush" />
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- 0: Header & Game Path Bar -->
+            <RowDefinition Height="Auto" />
+            <!-- 1: Action Toolbar -->
+            <RowDefinition Height="Auto" />
+            <!-- 2: Mod List Content -->
+            <RowDefinition Height="*" />
+            <!-- 3: Bottom Status Bar -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- TOP BAR: Header & Game Environment -->
+        <Border Grid.Row="0" Background="{DynamicResource BgSurfaceBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="18,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Branding -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <Border CornerRadius="8" Width="38" Height="38" Margin="0,0,10,0" ClipToBounds="True">
+                        <Image Source="pack://application:,,,/SekiroModManager.App;component/app.png" Width="38" Height="38" RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="SEKIRO" FontWeight="Black" FontSize="16" Foreground="{DynamicResource AccentPrimaryBrush}" />
+                            <TextBlock Text=" MOD 管理器" FontWeight="Bold" FontSize="16" Margin="4,0,0,0" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        </StackPanel>
+                        <TextBlock Text="Windows 免提权硬链接挂载引擎" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Center: Game Path & Status -->
+                <Border Grid.Column="1" Background="{DynamicResource BgInputBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,16,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Path Line -->
+                        <DockPanel Grid.Row="0" LastChildFill="True">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="6,0,0,0">
+                                <Button Content="自动定位" Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="11" Command="{Binding LocateGameCommand}" Margin="0,0,4,0" ToolTip="通过注册表与 Steam 库自动检索只狼安装路径" />
+                                <Button Content="浏览..." Style="{StaticResource BtnSecondary}" Padding="8,3" FontSize="11" Command="{Binding BrowseGameCommand}" ToolTip="手动选择包含 sekiro.exe 的游戏目录" />
+                            </StackPanel>
+                            <TextBlock Text="游戏路径:" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding GamePath}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+
+                        <!-- Status Indicator Line -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
+                            <!-- ModEngine Badge -->
+                            <Border Style="{StaticResource BadgeSuccess}" Visibility="{Binding IsModEngineInstalled, Converter={StaticResource BoolToVis}}" Margin="0,0,8,0">
+                                <TextBlock Text="✓ Mod Engine 正常" FontSize="11" Foreground="{DynamicResource SuccessBrush}" FontWeight="Medium" />
+                            </Border>
+                            <Border Style="{StaticResource BadgeWarning}" Visibility="{Binding IsModEngineInstalled, Converter={StaticResource InvertedBoolToVis}}" Margin="0,0,8,0">
+                                <TextBlock Text="{Binding ModEngineStatusDescription}" FontSize="11" Foreground="{DynamicResource WarningBrush}" FontWeight="Medium" />
+                            </Border>
+
+                            <!-- Strategy Info -->
+                            <TextBlock Text="挂载策略：" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding DeployStrategyText}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+
+                            <!-- Game Running Notice -->
+                            <Border Style="{StaticResource BadgeDanger}" Visibility="{Binding IsGameRunning, Converter={StaticResource BoolToVis}}" Margin="10,0,0,0">
+                                <TextBlock Text="● 游戏运行中（部署前请关闭）" FontSize="11" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Right: Theme Switcher & Launch Button -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Day/Night Mode Switch Button -->
+                    <Button Style="{StaticResource BtnSecondary}" Padding="10,6" Margin="0,0,10,0" Command="{Binding ToggleThemeCommand}">
+                        <Button.ToolTip>
+                            <ToolTip Content="切换白天/黑夜模式" />
+                        </Button.ToolTip>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="🌙 黑夜" Visibility="{Binding IsDarkMode, Converter={StaticResource BoolToVis}}" FontSize="12" />
+                            <TextBlock Text="☀️ 白天" Visibility="{Binding IsDarkMode, Converter={StaticResource InvertedBoolToVis}}" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Launch Game Button -->
+                    <Button Style="{StaticResource BtnPrimary}" Padding="18,8" Command="{Binding LaunchGameCommand}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="🚀" FontSize="14" Margin="0,0,6,0" />
+                            <TextBlock Text="启动只狼" FontSize="13" FontWeight="Bold" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- TOOLBAR: Actions & Search Filter -->
+        <Border Grid.Row="1" Background="{DynamicResource BgSurfaceAltBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="18,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="➕ 导入压缩包" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0" Command="{Binding ImportFilesCommand}" ToolTip="导入 .zip / .7z / .rar 压缩包" />
+                    <Button Content="📁 导入文件夹" Style="{StaticResource BtnSecondary}" Margin="0,0,12,0" Command="{Binding ImportFolderCommand}" ToolTip="导入包含 chr/parts 等特征目录的 MOD 文件夹" />
+
+                    <Rectangle Width="1" Height="20" Fill="{DynamicResource BorderSubtleBrush}" Margin="0,0,12,0" VerticalAlignment="Center" />
+
+                    <Button Content="🔍 部署计划" Style="{StaticResource BtnSecondary}" Margin="0,0,8,0" Command="{Binding PlanCommand}" ToolTip="预览文件覆盖与冲突分析" />
+                    <Button Content="⚡ 一键部署" Style="{StaticResource BtnSecondary}" Margin="0,0,8,0" Command="{Binding DeployCommand}" ToolTip="按优先级将启用 MOD 挂载到游戏 mods/ 目录" />
+                    <Button Content="🧹 安全清理" Style="{StaticResource BtnSecondary}" Margin="0,0,12,0" Command="{Binding CleanCommand}" ToolTip="按托管清单清理 mods/ 目录，不伤及玩家自拷文件" />
+                </StackPanel>
+
+                <!-- Directory Shortcuts & Search -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="游戏目录 ↗" Style="{StaticResource BtnIcon}" FontSize="11" Margin="0,0,6,0" Command="{Binding OpenGameFolderCommand}" ToolTip="打开只狼游戏根目录" />
+                    <Button Content="Mods 目录 ↗" Style="{StaticResource BtnIcon}" FontSize="11" Margin="0,0,6,0" Command="{Binding OpenModsFolderCommand}" ToolTip="打开游戏内 mods/ 挂载目录" />
+                    <Button Content="仓库目录 ↗" Style="{StaticResource BtnIcon}" FontSize="11" Margin="0,0,12,0" Command="{Binding OpenStorageFolderCommand}" ToolTip="打开 MOD 独立仓库目录" />
+
+                    <!-- Search Input Box -->
+                    <Border Background="{DynamicResource BgInputBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Width="200" Height="30">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="🔍" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="6,0,2,0" />
+                            <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
+                                     Foreground="{DynamicResource TextPrimaryBrush}" FontSize="12" Padding="2,0,6,0" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- MAIN MOD LIST / DRAG DROP AREA -->
+        <Grid Grid.Row="2" Margin="18,14,18,10">
+            <!-- Empty State -->
+            <Border Visibility="{Binding TotalModsCount, Converter={StaticResource EmptyCountToVis}}"
+                    Style="{StaticResource CardPanel}" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="40,30">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="📦" FontSize="44" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                    <TextBlock Text="暂未导入任何 MOD" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" />
+                    <TextBlock Text="您可以直接将 .zip / .7z / .rar 压缩包或 MOD 文件夹拖拽到此处，" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,6,0,2" />
+                    <TextBlock Text="或者点击上方工具栏中的「➕ 导入压缩包」进行添加。" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- Mod Items List -->
+            <ScrollViewer Visibility="{Binding TotalModsCount, Converter={StaticResource HasItemsCountToVis}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding FilteredMods}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource CardPanel}" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- Enable Switch -->
+                                        <ColumnDefinition Width="Auto" />
+                                        <!-- Priority Controller -->
+                                        <ColumnDefinition Width="Auto" />
+                                        <!-- Mod Info -->
+                                        <ColumnDefinition Width="*" />
+                                        <!-- Size & Time -->
+                                        <ColumnDefinition Width="Auto" />
+                                        <!-- Actions -->
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- 1. Enable Switch -->
+                                    <CheckBox Grid.Column="0" IsChecked="{Binding Enabled}" Style="{StaticResource ToggleSwitch}" Margin="4,0,16,0" ToolTip="启用 / 禁用此 MOD" />
+
+                                    <!-- 2. Priority Controller -->
+                                    <Border Grid.Column="1" Background="{DynamicResource BgSurfaceAltBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="0,0,16,0" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <StackPanel Margin="0,0,6,0" VerticalAlignment="Center">
+                                                <TextBlock Text="优先级" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                                <TextBox Text="{Binding Priority, UpdateSourceTrigger=LostFocus}" Background="Transparent" BorderThickness="0"
+                                                         FontWeight="Bold" FontSize="13" Foreground="{DynamicResource AccentPrimaryBrush}"
+                                                         HorizontalContentAlignment="Center" Width="36" />
+                                            </StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <Button Content="▲" Style="{StaticResource BtnIcon}" Padding="4,1" FontSize="9" Command="{Binding IncreasePriorityCommand}" ToolTip="提高优先级（同文件冲突时胜出覆盖）" />
+                                                <Button Content="▼" Style="{StaticResource BtnIcon}" Padding="4,1" FontSize="9" Command="{Binding DecreasePriorityCommand}" ToolTip="降低优先级" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 3. Mod Info -->
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                 FontSize="14" FontWeight="SemiBold"
+                                                 Background="Transparent" BorderThickness="0"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                                 ToolTip="可点击直接编辑 MOD 显示名称" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                            <TextBlock Text="ID: " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Text="{Binding Id}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0" />
+                                            <TextBlock Text="来源: " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Text="{Binding SourceFileName}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" MaxWidth="300" />
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- 4. Storage & Import Time -->
+                                    <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,16,0">
+                                        <TextBlock Text="{Binding SizeFormatted}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <TextBlock Text="{Binding ImportedAtFormatted}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Right" Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <!-- 5. Actions -->
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="📁 仓库目录" Style="{StaticResource BtnSecondary}" Padding="8,4" FontSize="11" Command="{Binding OpenFolderCommand}" Margin="0,0,6,0" ToolTip="打开该 MOD 在仓库中的存储目录" />
+                                        <Button Content="🗑" Style="{StaticResource BtnDanger}" FontSize="12" FontWeight="Bold" Command="{Binding DeleteCommand}" ToolTip="移除该 MOD（删除仓库文件）" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Drag & Drop Visual Cue Overlay -->
+            <Border x:Name="DragDropOverlay" Visibility="Collapsed" Background="{DynamicResource BgSurfaceBrush}" Opacity="0.95"
+                    BorderBrush="{DynamicResource AccentPrimaryBrush}" BorderThickness="2" CornerRadius="8" IsHitTestVisible="False">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="📥" FontSize="56" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                    <TextBlock Text="松开鼠标立即导入 MOD" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentPrimaryBrush}" HorizontalAlignment="Center" />
+                    <TextBlock Text="支持 .zip / .7z / .rar 压缩包与解压后的 MOD 文件夹" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Busy Progress Overlay -->
+            <Border Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                    Background="{DynamicResource BgSurfaceBrush}" Opacity="0.9" CornerRadius="8" IsHitTestVisible="False">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="220" Height="6" Margin="0,0,0,14" />
+                    <TextBlock Text="{Binding BusyText}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- BOTTOM STATUS BAR -->
+        <Border Grid.Row="3" Background="{DynamicResource BgSurfaceBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0" Padding="18,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Operation Message -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="● " FontSize="10" Foreground="{Binding StatusSeverity, Converter={StaticResource SeverityToBrush}}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="{Binding StatusSeverity, Converter={StaticResource SeverityToBrush}}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <!-- Center: Storage footprint -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                    <TextBlock Text="仓库占用: " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding StorageTotalSizeFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
+
+                <!-- Right: Mod Count Statistics -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="已启用 " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding EnabledModsCount}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentPrimaryBrush}" />
+                    <TextBlock Text=" / 总计 " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding TotalModsCount}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text=" 个 MOD" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
