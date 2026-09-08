@@ -235,6 +235,8 @@ public class AppViewModelTests : IDisposable
     public void WpfWindows_CanInstantiateAndRenderOnStaThread()
     {
         Exception? staEx = null;
+        Window? mainWin = null;
+        Window? planWin = null;
         var thread = new System.Threading.Thread(() =>
         {
             try
@@ -248,7 +250,7 @@ public class AppViewModelTests : IDisposable
 
                 var mm = new ModManager(_testDir);
                 var vm = new MainViewModel(mm);
-                var mainWin = new Views.MainWindow
+                mainWin = new Views.MainWindow
                 {
                     DataContext = vm
                 };
@@ -276,12 +278,29 @@ public class AppViewModelTests : IDisposable
                         new ConflictEntry("chr/c0000.anibnd.dcx", "Mod A", "Mod B")
                     }
                 };
-                var planWin = new Views.PlanWindow(samplePlan, () => { });
+                planWin = new Views.PlanWindow(samplePlan, () => { });
                 Assert.NotNull(planWin);
             }
             catch (Exception ex)
             {
                 staEx = ex;
+            }
+            finally
+            {
+                // 关键：必须在 STA 线程退出前关闭全部窗口并关闭 Dispatcher。
+                // 否则线程清理时 USER32 会销毁残留窗口并向已死亡的托管线程回调
+                // WndProc，测试宿主直接崩溃（MS.Win32.HwndSubclass NullReferenceException）。
+                try
+                {
+                    if (Application.Current != null)
+                    {
+                        foreach (var win in Application.Current.Windows.Cast<Window>().ToList())
+                            win.Close();
+                        Application.Current.Shutdown();
+                    }
+                }
+                catch { }
+                try { System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown(); } catch { }
             }
         });
 
@@ -295,9 +314,8 @@ public class AppViewModelTests : IDisposable
     [Fact]
     public void GenerateAndVerifyAppIcon()
     {
-        var appDir = @"D:\Zcode WorkSpace\SekiroModManager\src\SekiroModManager.App";
-        var icoPath = IOPath.Combine(appDir, "app.ico");
-        var pngPath = IOPath.Combine(appDir, "app.png");
+        var icoPath = FindAppAsset("app.ico");
+        var pngPath = FindAppAsset("app.png");
 
         Assert.True(IOFile.Exists(icoPath));
         Assert.True(new System.IO.FileInfo(icoPath).Length > 1000);
@@ -306,16 +324,33 @@ public class AppViewModelTests : IDisposable
 
         var thread = new System.Threading.Thread(() =>
         {
-            var uri = new Uri(pngPath);
-            var decoder = System.Windows.Media.Imaging.BitmapDecoder.Create(uri,
-                System.Windows.Media.Imaging.BitmapCreateOptions.None,
-                System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
-            Assert.True(decoder.Frames.Count > 0);
-            Assert.True(decoder.Frames[0].PixelWidth > 0);
+            try
+            {
+                var uri = new Uri(pngPath);
+                var decoder = System.Windows.Media.Imaging.BitmapDecoder.Create(uri,
+                    System.Windows.Media.Imaging.BitmapCreateOptions.None,
+                    System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+                Assert.True(decoder.Frames.Count > 0);
+                Assert.True(decoder.Frames[0].PixelWidth > 0);
+            }
+            finally
+            {
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown();
+            }
         });
 
         thread.SetApartmentState(System.Threading.ApartmentState.STA);
         thread.Start();
         thread.Join();
+    }
+
+    /// <summary>从测试程序集目录向上定位仓库根（以 SekiroModManager.sln 为标志），返回 App 资产路径。</summary>
+    private static string FindAppAsset(string fileName)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !IOFile.Exists(IOPath.Combine(dir.FullName, "SekiroModManager.sln")))
+            dir = dir.Parent;
+        Assert.NotNull(dir);
+        return IOPath.Combine(dir!.FullName, "src", "SekiroModManager.App", fileName);
     }
 }
