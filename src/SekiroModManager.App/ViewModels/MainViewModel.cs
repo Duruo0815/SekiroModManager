@@ -306,7 +306,7 @@ public class MainViewModel : ObservableObject
             else
             {
                 SetStatus("选定的目录下未找到 sekiro.exe，设置失败。", "Danger");
-                MessageBox.Show("所选目录未包含 sekiro.exe，请确保选择正确的游戏安装目录！", "游戏路径无效", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBoxAction("所选目录未包含 sekiro.exe，请确保选择正确的游戏安装目录！", "游戏路径无效", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }
@@ -316,7 +316,7 @@ public class MainViewModel : ObservableObject
         if (!IsGamePathValid)
         {
             SetStatus("游戏路径未配置或无效，无法启动！", "Danger");
-            MessageBox.Show("请先配置有效的《只狼》游戏目录！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBoxAction("请先配置有效的《只狼》游戏目录！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -640,11 +640,5 @@ public class MainViewModel : ObservableObject
         StatusSeverity = severity;
     }
 
-    private static string FormatBytes(long bytes) => bytes switch
-    {
-        >= 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
-        >= 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
-        >= 1024 => $"{bytes / 1024.0:F1} KB",
-        _ => $"{bytes} B"
-    };
+    private static string FormatBytes(long bytes) => FormatHelper.FormatBytes(bytes);
 }

@@ -170,7 +170,9 @@ public class ModManager
         var engine = CreateEngine();
         plan ??= engine.Plan(Config.Mods.Where(m => m.Enabled));
         var result = engine.Deploy(plan);
-        result.Warnings.Insert(0, iniMessage);
+        // ini 状态仅在非“无需修改”时才插入警告，避免正常场景下的信息噪音
+        if (!iniMessage.Contains("无需修改"))
+            result.Warnings.Insert(0, iniMessage);
         foreach (var warning in plan.Warnings)
             result.Warnings.Add(warning);
         return result;
@@ -199,5 +201,5 @@ public class ModManager
     private DeployEngine CreateEngine() => new(Config.GamePath, StorageRoot);
 
     private static string NewModId()
-        => "m" + DateTime.Now.ToString("yyyyMMddHHmmss") + Guid.NewGuid().ToString("N")[..4];
+        => "m" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + Guid.NewGuid().ToString("N")[..4];
 }

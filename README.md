@@ -1,4 +1,4 @@
-﻿# SekiroModManager（只狼 MOD 管理器）
+# SekiroModManager（只狼 MOD 管理器）
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 
 </div>
 
-> **接手开发 / 维护请先阅读 [DEVELOPMENT.md](DEVELOPMENT.md)**（架构、设计决策、测试铁律、路线图）与 **[AGENTS.md](AGENTS.md)**（AI 编码工具工作区指引）。
+> **接手开发 / 维护请先阅读 [DEVELOPMENT.md](docs/DEVELOPMENT.md)**（架构、设计决策、测试铁律、路线图）与 **[AGENTS.md](AGENTS.md)**（AI 编码工具工作区指引）。
 
 ---
 

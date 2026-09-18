@@ -1,6 +1,6 @@
 # AGENTS.md — AI 编码工具工作区指引
 
-本项目是"只狼 MOD 管理器"（Windows，C# / .NET 8 WPF）。**开始任何工作前，先完整阅读 [DEVELOPMENT.md](DEVELOPMENT.md)**，尤其注意：
+本项目是"只狼 MOD 管理器"（Windows，C# / .NET 8 WPF）。**开始任何工作前，先完整阅读 [DEVELOPMENT.md](docs/DEVELOPMENT.md)**，尤其注意：
 
 1. **§2 环境准备**：本机 `dotnet` 是用户级安装、不在 PATH（Git Bash 下用
    `/c/Users/cao12/AppData/Local/Microsoft/dotnet/dotnet.exe`）；Git Bash 下 MSBuild 属性必须写 `-p:Key=Value` 而不是 `/p:Key=Value`。
@@ -10,7 +10,7 @@
 工作规则：
 
 - 依赖方向固定：`App → Core`、`Tests → Core + App`；Core 不得引入任何 UI 依赖，UI 只通过 `ModManager` 门面调业务。
-- 每次修改后运行 `dotnet test SekiroModManager.sln`（当前 34 个用例必须全绿、连续运行稳定）。
+- 每次修改后运行 `dotnet test SekiroModManager.sln`（当前 39 个用例必须全绿、连续运行稳定）。
 - 修 bug 先写回归测试（模式参考 `tests/SekiroModManager.Tests/Core/HardeningTests.cs`）。
 - 新建 xUnit 测试文件记得 `using Xunit;`（本项目已三次踩坑）。
 - 测试不得写死机器相关绝对路径。

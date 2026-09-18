@@ -2,7 +2,7 @@
 
 > 本文档面向后续接手开发的开发者 / AI 编码工具（Antigravity 等）。
 > 目标：读完本文即可安全地继续开发，不破坏既有设计契约。
-> 最后更新：2026-09-06，与 git `0ccfe9d` 状态对齐（34/34 测试全绿）。
+> 最后更新：2026-09-08，与最新修复对齐（39/39 测试全绿）。
 
 ---
 
@@ -14,7 +14,7 @@
 |---|---|
 | 核心库 `SekiroModManager.Core` | ✅ 稳定，UI 无关，所有业务逻辑都在这里 |
 | WPF 前端 `SekiroModManager.App` | ✅ 完成（MVVM + 双主题 + 部署计划窗） |
-| 自动化测试 | ✅ 34/34 通过（`dotnet test`），连续运行稳定 |
+| 自动化测试 | ✅ 39/39 通过（`dotnet test`），连续运行稳定 |
 | 一轮系统性 bug 审查 | ✅ 已完成（悬空链接清理、zip-slip 等已修复并有回归测试） |
 | Git | ✅ 已推送 GitHub：`https://github.com/Duruo0815/SekiroModManager.git`（main 分支） |
 
@@ -39,8 +39,9 @@
 ```
 SekiroModManager/
 ├── SekiroModManager.sln               # 三个项目：Core / App / Tests
-├── 启动管理器.bat                      # 一键启动（Release → Debug → dotnet run 三级回退）
-├── README.md / LICENSE / AGENTS.md / DEVELOPMENT.md
+├── README.md / LICENSE / AGENTS.md    # 根目录保留（GitHub 首页 + AI 工具指引）
+├── docs/
+│   └── DEVELOPMENT.md                 # 本文档（开发与维护指南）
 ├── src/
 │   ├── SekiroModManager.Core/         # 【核心引擎库】零 UI 依赖
 │   │   ├── ModManager.cs              # ★ 门面：UI 唯一入口
@@ -54,7 +55,8 @@ SekiroModManager/
 │   │       └── DeployEngine.cs        # ★ 冲突计划 + 硬链接挂载 + 清单驱动清理
 │   └── SekiroModManager.App/          # 【WPF 桌面端】MVVM
 │       ├── App.xaml(.cs)              # 启动入口，初始化 ThemeManager
-│       ├── Common/                    # ObservableObject / RelayCommand / Converters
+│       ├── Assets/                    # app.ico / app.png 图标资源
+│       ├── Common/                    # ObservableObject / RelayCommand / Converters / FormatHelper
 │       ├── Theme/                     # DarkTheme / LightTheme / Styles 资源字典
 │       │   ├── ThemeManager.cs        # 主题切换（theme.json 持久化）+ 静态事件 ThemeChanged
 │       │   └── WindowTitleBarHelper.cs# DWM API 沉浸式标题栏
@@ -67,7 +69,7 @@ SekiroModManager/
     │   ├── DeployEngineTests.cs
     │   ├── ImportTests.cs
     │   └── HardeningTests.cs          # 隐藏文件 / 悬空链接 / zip-slip / 只读文件 / 前缀目录
-    └── App/AppViewModelTests.cs       # VM / 主题 / 转换器 / STA 窗口冒烟（10 用例）
+    └── App/AppViewModelTests.cs       # VM / 主题 / 转换器 / STA 窗口冒烟 / 回归测试（15 用例）
 ```
 
 **依赖方向（必须保持）**：`App → Core`，`Tests → Core + App`。`Core` 不引用任何 UI 库。
@@ -222,15 +224,14 @@ mm.LaunchGame() -> bool
 # dotnet 见 §2；Git Bash 下 MSBuild 属性必须用 -p: 而非 /p:
 
 dotnet build SekiroModManager.sln
-dotnet test SekiroModManager.sln            # 34 个用例必须全绿
+dotnet test SekiroModManager.sln            # 39 个用例必须全绿
 
-# 运行桌面端
+# 运行桌面端（开发调试）
 dotnet run --project src/SekiroModManager.App
-# 或双击根目录 启动管理器.bat
 
-# 发布（框架依赖单文件）
-dotnet publish src/SekiroModManager.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
-# 产物: src/SekiroModManager.App/bin/Release/net8.0-windows/win-x64/publish/SekiroModManager.App.exe
+# 发布（框架依赖单文件，产物输出到根目录 release/）
+dotnet publish src/SekiroModManager.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:PublishDir=../../../release/
+# 产物: release/SekiroModManager.App.exe（双击直接启动）
 ```
 
 ---

@@ -9,12 +9,12 @@
     <ApplicationTitle>只狼 MOD 管理器</ApplicationTitle>
     <RootNamespace>SekiroModManager.App</RootNamespace>
     <AssemblyName>SekiroModManager.App</AssemblyName>
-    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="app.ico" />
-    <Resource Include="app.png" />
+    <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\app.png" />
   </ItemGroup>
 
   <ItemGroup>

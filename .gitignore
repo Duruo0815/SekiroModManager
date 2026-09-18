@@ -1,6 +1,7 @@
-﻿[Bb]in/
+[Bb]in/
 [Oo]bj/
 publish/
+release/
 storage/
 config.json
 theme.json
@@ -10,3 +11,4 @@ theme.json
 .vs/
 .idea/
 .vscode/
+.agents/
